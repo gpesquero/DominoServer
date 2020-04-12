@@ -16,13 +16,18 @@ public class Log {
 				time.getMinute(),
 				time.getSecond());
 		
-		System.out.println(timeString+" > "+type+": "+text);
+		System.out.println(timeString+type+": "+text);
 		
 	}
 	
 	public static void info(String text) {
 		
-		log("INFO", text);		
+		log(" (INFO)", text);
+	}
+
+	public static void error(String text) {
+		
+		log(" ((((ERROR))))", text);		
 	}
 
 }
