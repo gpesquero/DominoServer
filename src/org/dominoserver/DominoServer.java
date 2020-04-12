@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import org.dominoserver.Message.MsgId;
+
 public class DominoServer {
 
 	private static String APP_NAME="DominoServer";
-	
-	private static final int COMM_PORT=52301;
 	
 	public static void main(String[] args) {
 		
@@ -16,44 +16,47 @@ public class DominoServer {
 		
 		boolean mContinue=true;
 		
-		ServerSocket serverSocket=null;
+		MessageHandler messageHandler=new MessageHandler();
 		
-		try {
-			
-			Log.info("Listening on port "+COMM_PORT+"...");
-			
-			serverSocket=new ServerSocket(COMM_PORT);
-			
-			while(mContinue) {
-				
-				Socket clientSocket=serverSocket.accept();
-				
-				Log.info("Connection accepted !!!");
-				
-				
-			}			
-			
-			
-		} catch (IOException e) {
-			
-			Log.error("ServerSocket error: "+e.getMessage());
-		}
+		CommListener commListener=new CommListener(messageHandler);
 		
-		
-		
-
-		
-		if (serverSocket!= null) {
+		if (commListener.isOk()) {
 			
-			try {
-				serverSocket.close();
+			commListener.start();
+		
+			while (mContinue) {
 				
-				Log.info("ServerSocket closed");
+				Message msg=messageHandler.waitForMessage();
 				
-			} catch (IOException e) {
+				if (msg==null) {
+					
+					Log.error("Received message==null");
+					
+					mContinue=false;
+					
+					continue;
+				}
 				
-				Log.error("ServerSocket.close() error: "+e.getMessage());
+				if (msg.mId==MsgId.NEW_CONNECTION) {
+					
+					Player newPlayer=new Player(msg.mSocket);
+					
+					// Start the player thread...
+					newPlayer.start();
+				}
+				else {
+					
+					Log.error("Received unknown Msg with id="+msg.mId);
+					
+					mContinue=false;
+				}
 			}
+			
+			commListener.close();
+		}
+		else {
+			
+			Log.error("ServerSocket is not Ok...");
 		}
 		
 		Log.info("Quitting <"+APP_NAME+">");
