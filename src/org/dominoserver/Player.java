@@ -6,53 +6,48 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class Player extends Thread {
+public class Player /*extends Thread*/ {
 	
-	private Socket mSocket=null;
+	private int mPlayerPos=-1;
 	
-	public Player(Socket clientSocket) {
+	private String mPlayerName=null;
+	
+	private Connection mConnection=null;
+	
+	public Player(int playerPos, String playerName) {
+		
+		mPlayerPos=playerPos;
+		
+		mPlayerName=playerName;
+	}
+	
+	/*
+	public void setSocket(Socket clientSocket) {
 		
 		mSocket=clientSocket;		
 	}
-	
-	public void run() {
+	*/
+
+	public void setConnection(Connection connection) {
 		
-        try {
-        	
-        	PrintWriter out=new PrintWriter(mSocket.getOutputStream(), true);
-        	
-        	BufferedReader in=new BufferedReader(new InputStreamReader(mSocket.getInputStream()));
-        	
-        	String inputLine, outputLine;
-        	
-            /*
-            KnockKnockProtocol kkp = new KnockKnockProtocol();
-            
-                outputLine = kkp.processInput(null);
-                out.println(outputLine);
-                
-                */
-        	
-        	while((inputLine=in.readLine()) != null) {
-        		
-        		Log.info("Received Message: "+inputLine);
-        		
-        		/*
-        		Message cmd=CommProtocol.processLine(inputLine);
-                    
-                out.println(outputLine);
-                
-                if (outputLine.equals("Bye"))
-                        break;
-                }
-                socket.close();
-                */
-                
-            }
-        }
-        catch(IOException e) {
-        	
-        	Log.error("IOException error: "+e.getMessage());
-        }
+		mConnection=connection;		
+	}
+	
+	public boolean sendMessage(String msg) {
+		
+		if (mConnection==null) {
+					
+			Log.error("Player.sendMessage() mConnection==null");
+			
+			return false;
+		}
+		
+		return mConnection.sendMessage(msg);
+	}
+	
+	public String getPlayerName() {
+		
+		return mPlayerName;
+		
 	}
 }

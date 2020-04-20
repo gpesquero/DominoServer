@@ -52,9 +52,14 @@ public class CommListener extends Thread {
 				
 				Log.info("CommListener ServerSocket connection accepted !!!");
 				
+				Connection conn=new Connection(clientSocket, mMessageHandler);
+				conn.start();
+				
 				Message msg=new Message(MsgId.NEW_CONNECTION);
 				
-				msg.setSocket(clientSocket);
+				//msg.setSocket(clientSocket);
+				
+				msg.setConnection(conn);
 				
 				mMessageHandler.addMessage(msg);
 				
