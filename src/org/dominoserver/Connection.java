@@ -41,7 +41,7 @@ public class Connection extends Thread {
         		
         		Log.info("Received Message: "+inputLine);
         		
-        		Message msg=CommProtocol.processLine(inputLine);
+        		Message msg = CommProtocol.processLine(inputLine);
         		
         		msg.setConnection(this);
         		        		

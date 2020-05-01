@@ -1,17 +1,18 @@
 package org.dominoserver;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.util.ArrayList;
 
+import org.dominoserver.Game.Status;
 import org.dominoserver.Message.MsgId;
 
 public class DominoServer {
 
-	private static final String APP_NAME="DominoServer";
+	private static final String APP_NAME = "DominoServer";
 	
-	public static final int MAX_PLAYERS=4;
-	private static final int TIMER_TIMEOUT=5000;
+	public static final int TILES_PER_PLAYER = 7;
+	
+	private static final int TIMER_TIMEOUT = 5000;
 	
 	public static void main(String[] args) {
 		
@@ -25,7 +26,7 @@ public class DominoServer {
 	
 	CommListener mCommListener=null;
 	
-	Player[] mPlayers=null;
+	Game mGame = null;
 	
 	ArrayList<Connection> mConnections=null;
 	
@@ -68,14 +69,15 @@ public class DominoServer {
 		
 		mCommListener=new CommListener(mMessageHandler);
 		
-		mPlayers=new Player[MAX_PLAYERS];
+		mConnections=new ArrayList<Connection>();
 		
-		for(int i=0; i<MAX_PLAYERS; i++) {
-			
-			mPlayers[i]=null;
-		};
+		mGame = new Game();
 		
-		mConnections=new ArrayList<Connection>(); 
+		mGame.initPlayers();
+		
+		printConnections();
+		
+		mGame.printPlayers();
 		
 		// Start timer...
 		mTimerThread=new TimerThread();
@@ -122,29 +124,15 @@ public class DominoServer {
 			mConnections.add(msg.mConnection);
 			
 		}
-		else if (msg.mId==MsgId.OPEN_SESSION) {
+		else if (msg.mId==MsgId.LOG_IN) {
 			
 			String playerName=msg.getArgument("playerName");
 			
-			Log.info("Received Msg OPEN_SESSION with playerName=<"+playerName+">");
+			Log.info("Received Msg LOG_IN with playerName=<"+playerName+">");			
 			
 			// First, check if we already have a player with that name...
 			
-			int playerPos=-1;
-			
-			for(int i=0; i<MAX_PLAYERS; i++) {
-				
-				//Log.info("Player["+i+"]="+mPlayers[i]);
-				
-				if (mPlayers[i]!=null) {
-					
-					if (mPlayers[i].getPlayerName().compareTo(playerName)==0) {
-						
-						playerPos=i;
-						break;
-					}
-				}						
-			}
+			int playerPos = mGame.findPlayerPos(playerName);
 			
 			Player player=null;
 			
@@ -152,9 +140,9 @@ public class DominoServer {
 				
 				// We have not found this player. Create a new one in an available space...
 				
-				for(int i=0; i<MAX_PLAYERS; i++) {
+				for(int i=0; i<Game.MAX_PLAYERS; i++) {
 					
-					if (mPlayers[i]==null) {
+					if (mGame.mPlayers[i].isRobot()) {
 						
 						playerPos=i;
 						break;
@@ -168,7 +156,11 @@ public class DominoServer {
 					// Close socket...
 					
 					try {
-						msg.mSocket.close();
+						
+						if (msg.mSocket!=null) {
+							
+							msg.mSocket.close();
+						}
 						
 					} catch (IOException e) {
 						
@@ -177,26 +169,28 @@ public class DominoServer {
 					
 					player=null;
 				}
-				
-				player=new Player(playerPos, playerName);
+				else {
 					
-				//newPlayer.setMessageHandler(mMessageHandler);
-				//newPlayer.setSocket(msg.mSocket);
+					player=new Player(playerPos, playerName);
+					
+					//newPlayer.setMessageHandler(mMessageHandler);
+					//newPlayer.setSocket(msg.mSocket);
+					
+					player.setConnection(msg.mConnection);
+					
+					mGame.mPlayers[playerPos]=player;
 				
-				player.setConnection(msg.mConnection);
-				
-				mPlayers[playerPos]=player;
-			
-				// Start the player thread...
-				//newPlayer.start();
-				
-				Log.info("SERVER: Created new player <"+playerName+">");
+					// Start the player thread...
+					//newPlayer.start();
+					
+					Log.info("SERVER: Created new player <"+playerName+">");
+				}
 			}
 			else {
 				
 				// Connect to an existing Player...
 				
-				player=mPlayers[playerPos];
+				player=mGame.mPlayers[playerPos];
 				
 				player.setConnection(msg.mConnection);
 				
@@ -210,14 +204,58 @@ public class DominoServer {
 				
 				existingPlayer.start();
 				*/
-				
 			}
 			
-			String msgString=CommProtocol.createMsgSessionInfo(mPlayers);
+			if (player!=null) {
+				
+				// Send info to all active players
+				
+				if (mGame.mStatus == Status.RUNNING) {
+					
+					mGame.sendBoardTilesInfoToAllPlayers();
+					mGame.sendGameTileInfoToAllPlayers();
+				}
+				
+				mGame.sendGameInfoToAllPlayers();
+			}
 			
-			player.sendMessage(msgString);
+			mGame.printPlayers();
+		}
+		else if (msg.mId==MsgId.LOG_OUT) {
 			
-			printPlayers();
+			String playerName=msg.getArgument("playerName");
+			
+			Log.info("Received Msg LOG_OUT with playerName=<"+playerName+">");
+			
+			// First, find playerName...
+			
+			int playerPos = mGame.findPlayerPos(playerName);
+			
+			if (playerPos < 0) {
+				
+				Log.error("Player <"+playerName+"> not found. Cannot log out");				
+			}
+			else {
+				
+				Player oldPlayer = mGame.mPlayers[playerPos];
+				
+				Player robotPlayer = new Player(playerPos, Game.ROBOT_PLAYER_NAME);
+				
+				robotPlayer.setAsRobot(true);
+				
+				mGame.mPlayers[playerPos] = robotPlayer;
+				
+				String msgString = CommProtocol.createMsgGameInfo(mGame);
+				
+				oldPlayer.sendMessage(msgString);
+			}
+			
+			mGame.sendBoardTilesInfoToAllPlayers();
+			
+			mGame.sendGameInfoToAllPlayers();
+			
+			mGame.printPlayers();
+			
 		}
 		else if (msg.mId==MsgId.TIMER) {
 			
@@ -239,6 +277,115 @@ public class DominoServer {
 			}
 			*/
 		}
+		else if (msg.mId==MsgId.MOVE_PLAYER) {
+			
+			String playerName=msg.getArgument("playerName");
+			int newPos=Integer.parseInt(msg.getArgument("newPos"));
+			
+			Log.info("Received Msg MOVE_PLAYER with playerName=<"+playerName+">, newPos="+newPos);
+			
+			// First, find playerName...
+			
+			int playerPos = mGame.findPlayerPos(playerName);
+			
+			if (playerPos < 0) {
+				
+				Log.error("Move Player. playerName not found!!!");				
+			}
+			else {
+				
+				// Exchange players....
+				
+				Player aux=mGame.mPlayers[newPos];
+				
+				mGame.mPlayers[newPos]=mGame.mPlayers[playerPos];
+				
+				mGame.mPlayers[playerPos]=aux;
+				
+				mGame.sendGameInfoToAllPlayers();
+				
+				mGame.printPlayers();
+			}	
+			
+		}
+		else if (msg.mId==MsgId.LAUNCH_GAME) {
+			
+			String playerName=msg.getArgument("playerName");
+			
+			Log.info("Received Msg LAUNCH_GAME with playerName=<"+playerName+">");
+			
+			if (mGame.getStatus()==Game.Status.RUNNING) {
+				
+				Log.error("Game is already running...>");
+			}
+			else {
+				
+				mGame.launchGame(mMessageHandler);
+			}
+			
+			mGame.sendBoardTilesInfoToAllPlayers();
+			mGame.sendGameTileInfoToAllPlayers();
+			mGame.sendGameInfoToAllPlayers();
+		}
+		else if (msg.mId==MsgId.REQUEST_TILE_INFO) {
+			
+			String playerName=msg.getArgument("playerName");
+			
+			Log.info("Received Msg REQUEST_TILE_INFO with playerName=<"+playerName+">");
+			
+			if (mGame.getStatus() == Game.Status.NOT_STARTED) {
+				
+				Log.error("Game is not started!! Cannot send tile info");
+			}
+			else {
+				
+				Player player = mGame.getPlayer(playerName);
+				
+				if (player == null) {
+					
+					Log.error("Player not found!!");
+				}
+				else {
+					
+					player.sendBoardTileInfo(mGame);
+					player.sendGameTileInfo(mGame);
+				}
+			}
+		}
+		else if (msg.mId==MsgId.PLAY_TILE) {
+					
+			String playerName=msg.getArgument("playerName");
+			
+			int playerPos=Integer.parseInt(msg.getArgument("playerPos"));
+			
+			Log.info("Received Msg PLAY_TILE with playerName=<"+playerName+"> and playerPos="+playerPos);
+			
+			String tileText = msg.getArgument("tile");
+
+            String n1 = tileText.substring(0, 1);
+
+            int number1 = Integer.parseInt(n1);
+
+            String n2 = tileText.substring(2);
+
+            int number2 = Integer.parseInt(n2);
+			
+			DominoTile tile = new DominoTile(number1, number2);
+			
+			int boardSide = Integer.parseInt(msg.getArgument("boardSide"));
+			
+			Log.info("Tile played="+tile.mNumber1+"-"+tile.mNumber2+", boardSide="+boardSide);
+			
+			mGame.addPlayedTile(tile, boardSide);
+			
+			mGame.increaseTurnPlayer(mMessageHandler);
+			
+			mGame.sendBoardTilesInfoToAllPlayers();
+			
+			mGame.sendGameTileInfoToAllPlayers();
+			
+			mGame.sendGameInfoToAllPlayers();
+		}
 		else {
 			
 			Log.error("SERVER: Received UNKNOWN Msg (MsgId="+msg.mId+", Error="+msg.mErrorString+")");
@@ -247,28 +394,11 @@ public class DominoServer {
 		return run;
 	}
 	
-	private void printPlayers() {
+	void printConnections() {
 		
 		// List active connections...
 		
 		Log.info("Number of active connections="+mConnections.size());
-		
-		// List all players...
-		for(int i=0; i<MAX_PLAYERS; i++) {
-			
-			String playerName;
-			
-			if (mPlayers[i]==null) {
-				
-				playerName="-----";
-				
-			}
-			else {
-				
-				playerName=mPlayers[i].getPlayerName();
-			}
-			
-			Log.info("Player["+i+"] is <"+playerName+">");
-		}
 	}
+	
 }

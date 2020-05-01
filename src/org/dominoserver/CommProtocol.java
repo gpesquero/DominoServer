@@ -9,21 +9,40 @@ public class CommProtocol {
 		return "<ping>";
 	}
 	
-	static public String createMsgSessionInfo(Player[] players) {
+	static public String createMsgGameInfo(Game game) {
 		
-		String message="<session_info";
+		String message="<game_info";
 		
-		for(int i=0; i<DominoServer.MAX_PLAYERS; i++) {
+		message+=", status=";
+		
+		Game.Status status=game.getStatus();
+		
+		switch (status) {
+		
+		case NOT_STARTED:
+			message+="notStarted";
+			break;
+		
+		case RUNNING:
+			message+="running";
+			break;
+			
+		default:
+			message+="unknown";
+			break;	
+		}
+		
+		for(int i=0; i<Game.MAX_PLAYERS; i++) {
 			
 			message+=", player"+i+"=";
 			
-			if (players[i]==null) {
+			if (game.mPlayers[i]==null) {
 				
-				message+=null;
+				message+="Robot"+i;
 			}
 			else {
 				
-				message+=players[i].getPlayerName();
+				message+=game.mPlayers[i].getPlayerName();
 			}
 		}
 		
@@ -31,6 +50,91 @@ public class CommProtocol {
 		
 		return message;
 		
+	}
+	
+	static public String createMsgGameTileInfo(Game game) {
+		
+		String message="<game_tile_info";
+		
+		message+=", turnPlayer="+game.mTurnPlayer;
+		
+		for(int i=0; i<Game.MAX_PLAYERS; i++) {
+			
+			message+=", player"+i+"=";
+			
+			message+=game.mPlayers[i].getTileCount();
+		}
+		
+		message+=">";
+		
+		return message;		
+	}
+	
+	static public String createMsgPlayerTileInfo(Player player) {
+		
+		String message="<player_tile_info";
+		
+		message+=", playerName="+player.getPlayerName();
+		
+		message+=", tileCount="+player.getTileCount();
+		
+		for(int i=0; i<player.mTiles.size(); i++){
+			
+			DominoTile tile = player.mTiles.get(i);
+			
+			message+=", tile"+i+"="+tile.mNumber1+"-"+tile.mNumber2;
+		}
+		
+		message+=">";
+		
+		return message;		
+	}
+	
+	static public String createMsgBoardTilesInfo1(Game game) {
+
+		String message="<board_tile_info1";
+		
+		int boardTiles1Count = game.mBoardTiles1.size();
+		
+		message+=", tileCount="+boardTiles1Count;
+		
+		if (boardTiles1Count == 0) {
+			
+			message+=", forceDouble6Tile="+(game.mRoundCount==0);
+		}
+		else {
+			
+			for(int i=0; i<boardTiles1Count; i++){
+			
+				DominoTile tile = game.mBoardTiles1.get(i);
+			
+				message+=", tile"+i+"="+tile.mNumber1+"-"+tile.mNumber2;
+			}
+		}
+		
+		message+=">";
+		
+		return message;
+	}
+	
+	static public String createMsgBoardTilesInfo2(Game game) {
+
+		String message="<board_tile_info2";
+		
+		int boardTiles2Count = game.mBoardTiles2.size();
+		
+		message+=", tileCount="+boardTiles2Count;
+		
+		for(int i=0; i<boardTiles2Count; i++){
+			
+			DominoTile tile = game.mBoardTiles1.get(i);
+			
+			message+=", tile"+i+"="+tile.mNumber1+"-"+tile.mNumber2;
+		}
+		
+		message+=">";
+		
+		return message;
 	}
 	
 	static public Message processLine(String line) {
@@ -130,9 +234,25 @@ public class CommProtocol {
 			}
 		}
 		
-		if (command.compareTo("open_session")==0) {
+		if (command.compareTo("login")==0) {
 			
-			msg.mId=MsgId.OPEN_SESSION;			
+			msg.mId=MsgId.LOG_IN;			
+		}
+		else if (command.compareTo("logout")==0) {
+			
+			msg.mId=MsgId.LOG_OUT;			
+		}
+		else if (command.compareTo("move_player")==0) {
+			
+			msg.mId=MsgId.MOVE_PLAYER;			
+		}
+		else if (command.compareTo("launch_game")==0) {
+			
+			msg.mId=MsgId.LAUNCH_GAME;			
+		}
+		else if (command.compareTo("request_tile_info")==0) {
+			
+			msg.mId=MsgId.REQUEST_TILE_INFO;			
 		}
 		else {
 			

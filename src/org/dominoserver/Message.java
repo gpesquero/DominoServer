@@ -9,8 +9,14 @@ public class Message {
 		
 		UNKNOWN,
 		NEW_CONNECTION,
-		OPEN_SESSION,
-		TIMER
+		LOG_IN,
+		LOG_OUT,
+		TIMER,
+		MOVE_PLAYER,
+		LAUNCH_GAME,
+		REQUEST_TILE_INFO,
+		PLAY_TILE
+		
 	};
 	
 	public MsgId mId=MsgId.UNKNOWN;
