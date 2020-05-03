@@ -1,10 +1,17 @@
 package org.dominoserver;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Random;
 
 import org.dominoserver.Message.MsgId;
 
-public class Player /*extends Thread*/ {
+import javafx.util.Pair;
+
+public class Player {
+	
+	private final static long ROBOT_PLAY_TILE_TIMEOUT = 3000;
 	
 	public int mPlayerPos = -1;
 	
@@ -98,54 +105,142 @@ public class Player /*extends Thread*/ {
 				
 				// This is the first round. We have to play the double 6 tile...
 				
-				DominoTile tile = removeTile(6, 6);
-				
-				if (tile == null) {
+				if (!hasTile(6, 6)) {
 					
 					Log.error("Robot has to play double 6 tile, but cannot find it!!!");
 					
 					return;
 				}
 				
-				// Launch "play_tile" message...
+				DominoTile tile = new DominoTile(6, 6);
 				
-				Message msg = new Message(MsgId.PLAY_TILE);
+				playTile(msgHandler, tile, 1);
+			}
+			else {
 				
-				msg.addArgument("playerName", mPlayerName);
-				msg.addArgument("playerPos", String.valueOf(mPlayerPos));
-				msg.addArgument("tile", String.valueOf(tile.mNumber1)+"-"+String.valueOf(tile.mNumber2));
-				msg.addArgument("boardSide", String.valueOf(1));
+				// This is not the first round. Play any of the tiles...
 				
-				new Thread() {
-					
-					public void run() {
-						
-						try {
-							sleep(3000);
-							
-						} catch (InterruptedException e) {
-							
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						
-						msgHandler.addMessage(msg);
-					}
-					
-					
-				}.start();
+				// First, shuffle the tiles
 				
+				long seed = System.currentTimeMillis();
 				
+				Random random = new Random(seed);
+				
+				Collections.shuffle(mTiles, random);
+				
+				// Play tile on board side 1
+				
+				playTile(msgHandler, mTiles.get(0), 1);
 			}
 		}
 		else {
 			
-			Log.error("Robot playTurn() pending...");
+			int endNumber1 = game.getEndNumber1();
+			
+			int endNumber2 = game.getEndNumber2();
+			
+			
+			ArrayList<Pair<DominoTile, Integer>> playableTiles = getPlayableTiles(endNumber1, endNumber2);
+			
+			if (playableTiles.size() == 0) {
+				
+				Log.info("Robot.playTurn() No playableTiles. Robot has to pass...");
+				
+				playTile(msgHandler, null, 0);
+			}
+			else {
+				
+				long seed = System.currentTimeMillis();
+				
+				Random random = new Random(seed);
+				
+				Collections.shuffle(playableTiles, random);
+				
+				DominoTile tile = playableTiles.get(0).getKey();
+				Integer boardSide = playableTiles.get(0).getValue();
+				
+				Log.info("Robot.playTurn() Play tile="+tile.mNumber1+"-"+tile.mNumber2+
+						", boardSide="+boardSide);
+				
+				/*
+				DominoTile removedTile = removeTile(tile.mNumber1, tile.mNumber2);
+				
+				if (removedTile == null) {
+					
+					Log.info("Robot removedTile() returned null");
+				}
+				*/
+				
+				playTile(msgHandler, tile, boardSide);
+			}
 		}
 		
 	}
 	
-	private DominoTile removeTile(int number1, int number2) {
+	public boolean hasTile(int number1, int number2) {
+		
+		Iterator<DominoTile> iter = mTiles.iterator();
+		
+		while (iter.hasNext()) {
+			
+			DominoTile tile = iter.next();
+			
+			if ((tile.mNumber1 == number1) && (tile.mNumber2 == number2)) {
+				
+				return true;
+			}
+			
+			if ((tile.mNumber1 == number2) && (tile.mNumber2 == number1)) {
+				
+				return true;
+			}
+		}
+		
+		return false;			
+	}
+	
+	private void playTile(MessageHandler msgHandler, DominoTile tile, int boardSide) {
+		
+		// Launch "play_tile" message...
+		
+		Message msg = new Message(MsgId.PLAY_TILE);
+		
+		msg.addArgument("playerName", mPlayerName);
+		msg.addArgument("playerPos", String.valueOf(mPlayerPos));
+		msg.addArgument("boardSide", String.valueOf(boardSide));
+		
+		String tileString;
+		
+		if (tile == null) {
+			
+			tileString = "null";
+		}
+		else {
+			
+			tileString = String.valueOf(tile.mNumber1)+"-"+String.valueOf(tile.mNumber2);
+		}
+		
+		msg.addArgument("tile", tileString);
+		
+		new Thread() {
+			
+			public void run() {
+				
+				try {
+					sleep(ROBOT_PLAY_TILE_TIMEOUT);
+					
+				} catch (InterruptedException e) {
+					
+					Log.error("Sleep InterruptedException");
+				}
+				
+				msgHandler.addMessage(msg);
+			}			
+			
+		}.start();
+	}
+	
+	public boolean removeTile(int number1, int number2) {
 		
 		for(int i=0; i<mTiles.size(); i++) {
 			
@@ -155,11 +250,18 @@ public class Player /*extends Thread*/ {
 				
 				mTiles.remove(i);
 				
-				return tile;
+				return true;
+			}
+			
+			if ((tile.mNumber1 == number2) && (tile.mNumber2 == number1)) {
+				
+				mTiles.remove(i);
+				
+				return true;
 			}
 		}
 		
-		return null;
+		return false;
 	}
 	
 	void sendBoardTileInfo(Game game) {		
@@ -171,5 +273,67 @@ public class Player /*extends Thread*/ {
 		String msgString2=CommProtocol.createMsgBoardTilesInfo2(game);
 		
 		sendMessage(msgString2);
+	}
+	
+	private ArrayList<Pair<DominoTile, Integer>> getPlayableTiles(int endNumber1, int endNumber2) {
+		
+		ArrayList<Pair<DominoTile, Integer>> playableTiles = new ArrayList<Pair<DominoTile, Integer>>();
+		
+		Iterator<DominoTile> iter = mTiles.iterator();
+		
+		while (iter.hasNext()) {
+			
+			DominoTile tile = iter.next();
+			
+			if ((tile.mNumber1 == endNumber1) || (tile.mNumber2 == endNumber1)) {
+				
+				Pair<DominoTile, Integer> pair = new Pair<DominoTile, Integer> (tile, 1);
+				
+				playableTiles.add(pair);				
+			}
+			
+			if ((tile.mNumber1 == endNumber2) || (tile.mNumber2 == endNumber2)) {
+				
+				Pair<DominoTile, Integer> pair = new Pair<DominoTile, Integer> (tile, 2);
+				
+				playableTiles.add(pair);				
+			}
+		}
+		
+		return playableTiles;
+	}
+	
+	public boolean hasTileWithNumber(int number) {
+		
+		Iterator<DominoTile> iter = mTiles.iterator();
+		
+		while (iter.hasNext()) {
+			
+			DominoTile tile = iter.next();
+			
+			if ((tile.mNumber1 == number) || (tile.mNumber2 == number)) {
+				
+				return true;
+			}		
+		}
+		
+		return false;
+	}
+	
+	public int getPoints() {
+		
+		int points = 0;
+		
+		Iterator<DominoTile> iter = mTiles.iterator();
+		
+		while (iter.hasNext()) {
+			
+			DominoTile tile = iter.next();
+			
+			points += tile.mNumber1;
+			points += tile.mNumber2;
+		}
+		
+		return points;
 	}
 }

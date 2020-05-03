@@ -3,7 +3,7 @@ package org.dominoserver;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.dominoserver.Game.Status;
+import org.dominoserver.Game.GameStatus;
 import org.dominoserver.Message.MsgId;
 
 public class DominoServer {
@@ -210,13 +210,15 @@ public class DominoServer {
 				
 				// Send info to all active players
 				
-				if (mGame.mStatus == Status.RUNNING) {
+				if (mGame.mGameStatus == GameStatus.RUNNING) {
 					
 					mGame.sendBoardTilesInfoToAllPlayers();
 					mGame.sendGameTileInfoToAllPlayers();
 				}
 				
 				mGame.sendGameInfoToAllPlayers();
+				
+				mGame.sendRoundInfoToAllPlayers();
 			}
 			
 			mGame.printPlayers();
@@ -239,7 +241,7 @@ public class DominoServer {
 				
 				Player oldPlayer = mGame.mPlayers[playerPos];
 				
-				Player robotPlayer = new Player(playerPos, Game.ROBOT_PLAYER_NAME);
+				Player robotPlayer = new Player(playerPos, Game.ROBOT_PLAYER_NAME+playerPos);
 				
 				robotPlayer.setAsRobot(true);
 				
@@ -314,17 +316,20 @@ public class DominoServer {
 			
 			Log.info("Received Msg LAUNCH_GAME with playerName=<"+playerName+">");
 			
-			if (mGame.getStatus()==Game.Status.RUNNING) {
+			if (mGame.getGameStatus()==Game.GameStatus.RUNNING) {
 				
 				Log.error("Game is already running...>");
 			}
 			else {
 				
-				mGame.launchGame(mMessageHandler);
+				mGame.launchGame();
+				
+				mGame.launchNewRound(0, mMessageHandler);
 			}
 			
 			mGame.sendBoardTilesInfoToAllPlayers();
 			mGame.sendGameTileInfoToAllPlayers();
+			mGame.sendRoundInfoToAllPlayers();
 			mGame.sendGameInfoToAllPlayers();
 		}
 		else if (msg.mId==MsgId.REQUEST_TILE_INFO) {
@@ -333,7 +338,7 @@ public class DominoServer {
 			
 			Log.info("Received Msg REQUEST_TILE_INFO with playerName=<"+playerName+">");
 			
-			if (mGame.getStatus() == Game.Status.NOT_STARTED) {
+			if (mGame.getGameStatus() == Game.GameStatus.NOT_STARTED) {
 				
 				Log.error("Game is not started!! Cannot send tile info");
 			}
@@ -360,29 +365,95 @@ public class DominoServer {
 			
 			Log.info("Received Msg PLAY_TILE with playerName=<"+playerName+"> and playerPos="+playerPos);
 			
-			String tileText = msg.getArgument("tile");
-
-            String n1 = tileText.substring(0, 1);
-
-            int number1 = Integer.parseInt(n1);
-
-            String n2 = tileText.substring(2);
-
-            int number2 = Integer.parseInt(n2);
-			
-			DominoTile tile = new DominoTile(number1, number2);
-			
 			int boardSide = Integer.parseInt(msg.getArgument("boardSide"));
 			
-			Log.info("Tile played="+tile.mNumber1+"-"+tile.mNumber2+", boardSide="+boardSide);
+			String tileText = msg.getArgument("tile");
 			
-			mGame.addPlayedTile(tile, boardSide);
+			Player player = mGame.mPlayers[playerPos];
 			
-			mGame.increaseTurnPlayer(mMessageHandler);
+			DominoTile tile;
+			
+			if (tileText.compareTo("null") == 0) {
+				
+				tile = null;
+				
+				Log.info("Player <"+playerName+"> and pos="+playerPos+" has passed");
+			}
+			else {
+				
+				String n1 = tileText.substring(0, 1);
+
+	            int number1 = Integer.parseInt(n1);
+	
+	            String n2 = tileText.substring(2);
+	
+	            int number2 = Integer.parseInt(n2);
+			
+	            tile = new DominoTile(number1, number2);
+	            
+	            Log.info("Tile played="+tile.mNumber1+"-"+tile.mNumber2+", boardSide="+boardSide);
+	            
+	            if (!player.removeTile(tile.mNumber1, tile.mNumber2)) {
+	            	
+	            	Log.error("Player.removeTile() tile="+tile.mNumber1+"-"+tile.mNumber2+" not found");
+	            }
+	            
+	            mGame.addPlayedTile(tile, boardSide);
+			}
+			
+			if (player.mTiles.size() == 0) {
+				
+				// Player has won the round...
+				
+				Log.info("Player"+playerPos+" <"+player.getPlayerName()+"> has won the round");
+				
+				mGame.setWinnerPlayer(playerPos);
+				
+				mGame.sendRoundInfoToAllPlayers();
+				
+				mGame.launchNewRound(mGame.mRoundCount+1, mMessageHandler);
+				
+				/*
+				int playerPoints[] = mGame.getPlayerPoints();
+				
+				String msgString = CommProtocol.createMsgRoundInfo(mGame, playerPos);
+				
+				Log.info("MsgRoundWon: "+msgString);
+				*/				
+				
+			}
+			else if (mGame.isClosed()) {
+				
+				// Game has been closed...
+				
+				Log.info("Player"+playerPos+" <"+player.getPlayerName()+"> has closed the round");
+				
+				mGame.setCloserPlayer(playerPos);
+				
+				mGame.sendRoundInfoToAllPlayers();
+				
+				mGame.launchNewRound(mGame.mRoundCount+1, mMessageHandler);
+				
+				/*
+				int playerPoints[] = mGame.getPlayerPoints();
+				
+				String msgString = CommProtocol.createMsgGameClosed(mGame, playerPos);
+				
+				Log.info("MsgGameClosed: "+msgString);
+				*/			
+				
+			}
+			else {				
+				
+				mGame.increaseTurnPlayer(mMessageHandler);
+				
+			}
 			
 			mGame.sendBoardTilesInfoToAllPlayers();
 			
 			mGame.sendGameTileInfoToAllPlayers();
+			
+			mGame.sendRoundInfoToAllPlayers();
 			
 			mGame.sendGameInfoToAllPlayers();
 		}

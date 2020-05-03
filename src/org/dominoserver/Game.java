@@ -3,6 +3,7 @@ package org.dominoserver;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Random;
 
 public class Game {
 	
@@ -10,14 +11,25 @@ public class Game {
 	
 	public static final String ROBOT_PLAYER_NAME = "Robot";
 	
-	public enum Status {
+	public enum GameStatus {
 		
 		NOT_STARTED,
 		RUNNING
 		
 	};
 	
-	public Status mStatus = Status.NOT_STARTED;
+	public enum RoundStatus {
+		
+		NOT_STARTED,
+		RUNNING,
+		WON,
+		CLOSED
+		
+	};
+	
+	public GameStatus mGameStatus = GameStatus.NOT_STARTED;
+	
+	public RoundStatus mRoundStatus = RoundStatus.NOT_STARTED;
 	
 	public Player[] mPlayers=null;
 	
@@ -29,18 +41,34 @@ public class Game {
 	public ArrayList<DominoTile> mBoardTiles1 = null;
 	public ArrayList<DominoTile> mBoardTiles2 = null;
 	
+	public int mWinnerPlayerPos = -1;
+	public int mCloserPlayerPos = -1;
+	
+	public int mPair1Points = 0;
+	public int mPair2Points = 0;
+	
 	public Game() {		
 		
 	}
 	
-	public Status getStatus() {
+	public GameStatus getGameStatus() {
 		
-		return mStatus;
+		return mGameStatus;
 	}
 	
-	public void setStatus(Status status) {
+	public void setGameStatus(GameStatus gameStatus) {
 		
-		mStatus = status;
+		mGameStatus = gameStatus;
+	}
+	
+	public RoundStatus getRoundStatus() {
+		
+		return mRoundStatus;
+	}
+	
+	public void setRoundStatus(RoundStatus roundStatus) {
+		
+		mRoundStatus = roundStatus;
 	}
 	
 	public void initPlayers() {
@@ -49,7 +77,7 @@ public class Game {
 	
 		for(int i=0; i<MAX_PLAYERS; i++) {
 			
-			mPlayers[i]=new Player(i, ROBOT_PLAYER_NAME);
+			mPlayers[i]=new Player(i, ROBOT_PLAYER_NAME+i);
 			
 			mPlayers[i].setAsRobot(true);
 		};
@@ -108,21 +136,39 @@ public class Game {
 		}
 	}
 	
-	public void launchGame(MessageHandler msgHandler) {
+	public void launchGame() {
 		
-		mStatus = Status.RUNNING;
+		mGameStatus = GameStatus.RUNNING;
+		
+		
+	}
+	
+	public void launchNewRound(int roundCount, MessageHandler msgHandler) {
+		
+		mRoundStatus = RoundStatus.RUNNING;
+		
+		mRoundCount = roundCount;
 		
 		// Generate domino tiles...
 		
 		ArrayList<DominoTile> allTiles = DominoTile.createAllTiles();
 		
-		Collections.shuffle(allTiles);
+		// Shuffle domino tiles...
+		
+		long seed = System.currentTimeMillis();
+		
+		Random random = new Random(seed);
+		
+		Collections.shuffle(allTiles, random);
 		
 		Log.info("Shuffled all tiles...");
 		
 		// Assign tiles to each player
 		
 		for(int i=0; i<MAX_PLAYERS; i++) {
+			
+			// First, remove any existing tile from player
+			mPlayers[i].mTiles.clear();
 			
 			for(int j=0; j<DominoServer.TILES_PER_PLAYER; j++) {
 				
@@ -132,7 +178,7 @@ public class Game {
 		
 		// Assign the first turn
 		
-		if (mRoundCount==0) {
+		if (mRoundCount == 0) {
 			
 			Log.info("Search for player with Double Six tile...");
 			
@@ -270,15 +316,62 @@ public class Game {
 		}
 		else {
 			
-			DominoTile endTile;
+			int endNumber;
 			
 			if (boardSide == 1) {
 				
-				endTile = mBoardTiles1.get(mBoardTiles1.size()-1);				
+				DominoTile endTile = mBoardTiles1.get(mBoardTiles1.size()-1);
+				
+				endNumber = endTile.mNumber2;
+				
+				if (tile.mNumber1 == endNumber) {
+					
+					mBoardTiles1.add(tile);
+				}
+				else if (tile.mNumber2 == endNumber) {
+					
+					tile.swapNumbers();
+					
+					mBoardTiles1.add(tile);
+				}
+				else {
+					
+					Log.error("addPlayedTile(): Played tile <"+tile.mNumber1+"-"+tile.mNumber2+
+							"> cannot be placed in the board");
+				}
 			}
 			else if (boardSide == 2) {
 				
-				endTile = mBoardTiles2.get(mBoardTiles1.size()-1);
+				if (mBoardTiles2.size() == 0) {
+					
+					// Board side 2 is empty.
+					
+					// Get the end number from board 1
+					
+					endNumber = mBoardTiles1.get(0).mNumber1;
+				}
+				else {
+					
+					DominoTile endTile = mBoardTiles2.get(mBoardTiles2.size()-1);
+					
+					endNumber = endTile.mNumber2;
+				}
+				
+				if (tile.mNumber1 == endNumber) {
+					
+					mBoardTiles2.add(tile);
+				}
+				else if (tile.mNumber2 == endNumber) {
+					
+					tile.swapNumbers();
+					
+					mBoardTiles2.add(tile);
+				}
+				else {
+					
+					Log.error("addPlayedTile(): Played tile <"+tile.mNumber1+"-"+tile.mNumber2+
+							"> cannot be placed in the board");
+				}
 			}
 			else {
 				
@@ -287,8 +380,7 @@ public class Game {
 				return false;
 			}
 			
-			int endNumber = endTile.mNumber2;
-			
+			/*
 			// Check if the played tile has the "endNumber"
 			
 			if (tile.mNumber1 == endNumber) {
@@ -321,9 +413,10 @@ public class Game {
 				
 				return false;
 			}
+			*/
 		}
 		
-		Log.info("addPlayedTile(): Tile added in board");
+		Log.info("addPlayedTile(): Tile <"+tile.mNumber1+"-"+tile.mNumber2+"> added in boardSide="+boardSide);
 		
 		return true;
 	}
@@ -344,6 +437,255 @@ public class Game {
 			// It's the turn of this robot
 			
 			mPlayers[mTurnPlayer].playTurn(this, msgHandler);
+		}
+	}
+	
+	public int getEndNumber1() {
+		
+		int endNumber1;
+		
+		if (mBoardTiles1.size() == 0) {
+			
+			Log.error("getEndNumber1() mBoardTiles1.size() == 0");
+			
+			endNumber1 = -1;
+		}
+		else {
+			
+			DominoTile endTile1 = mBoardTiles1.get(mBoardTiles1.size()-1);
+		
+			endNumber1 = endTile1.mNumber2;
+		}
+		
+		return endNumber1;
+	}
+	
+	public int getEndNumber2() {
+		
+		int endNumber2;
+	
+		if (mBoardTiles2.size() == 0) {
+		
+			// There are no tiles in board2. Get the first number of board 1
+			
+			if (mBoardTiles1.size() == 0) {
+				
+				Log.error("getEndNumber2() mBoardTiles1.size() == 0");
+				
+				endNumber2 = -1;
+			}
+			else {
+				
+				endNumber2 = mBoardTiles1.get(0).mNumber1;				
+			}
+		}
+		else {
+			
+			DominoTile endTile2 = mBoardTiles2.get(mBoardTiles2.size()-1);
+			
+			endNumber2 = endTile2.mNumber2;
+		}
+		
+		return endNumber2;
+	}
+	
+	public boolean isClosed() {
+		
+		int endNumber1 = getEndNumber1();
+		int endNumber2 = getEndNumber2();
+		
+		if ((endNumber1 < 0) || (endNumber2 < 0)) {
+			
+			return false;
+		}
+		
+		if (endNumber1 != endNumber2) {
+			
+			return false;
+		}
+		
+		for (int i=0; i<MAX_PLAYERS; i++) {
+			
+			if (mPlayers[i].hasTileWithNumber(endNumber1)) {
+				
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	public int[] getPlayerPoints() {
+		
+		int points[] = new int[MAX_PLAYERS];
+		
+		for (int i=0; i<MAX_PLAYERS; i++) {
+			
+			Player player = mPlayers[i]; 
+			
+			points[i]=player.getPoints();	
+			
+			Log.info("Player"+player.mPlayerPos+" <"+player.getPlayerName()+"> has "+points[i]+" points");
+		}		
+		
+		return points;
+	}
+	
+	public void setWinnerPlayer(int winnerPlayerPos) {
+		
+		mRoundStatus = RoundStatus.WON;
+		
+		Log.info("setWinnerPlayer() winner is player in pos="+winnerPlayerPos+" with name <"+
+					mPlayers[winnerPlayerPos].getPlayerName());
+		
+		mWinnerPlayerPos = winnerPlayerPos;
+		
+		// Calculate pair points....
+		
+		int playerPoints[] = getPlayerPoints();
+		
+		
+		int totalPoints =   playerPoints[0] + playerPoints[1] +
+                            playerPoints[2] + playerPoints[3];
+		
+		int addingPoints = (totalPoints-1) / 10 +1;
+		
+		Log.info("Total points: "+totalPoints+" (+"+addingPoints+")");
+
+        int winningPair = (winnerPlayerPos % 2) +1;
+        
+        Log.info("Winner is pair #"+winningPair);
+        
+        String pair1Text = "Pair1: ("+mPlayers[0].getPlayerName()+" + "+mPlayers[2].getPlayerName()+") ";
+        String pair2Text = "Pair2: ("+mPlayers[1].getPlayerName()+" + "+mPlayers[3].getPlayerName()+") ";
+        
+        if (winningPair == 1) {
+        	
+        	int finalPair1Points = mPair1Points + addingPoints;
+        	
+        	Log.info(pair1Text+mPair1Points+" + "+addingPoints+" = "+finalPair1Points+" points");
+        	
+        	Log.info(pair2Text+mPair2Points+" points");
+        	
+        	mPair1Points += addingPoints;
+        }
+        else if (winningPair == 2) {
+        	
+        	int finalPair2Points = mPair2Points + addingPoints;
+        	
+        	Log.info(pair1Text+mPair1Points+" points");
+        	
+        	Log.info(pair2Text+mPair2Points+" + "+addingPoints+" = "+finalPair2Points+" points");
+        	
+        	mPair2Points += addingPoints;
+        }
+        else {
+
+            Log.error("Incorrect winningPair="+winningPair);
+        }      
+	}
+	
+	public void setCloserPlayer(int closerPlayerPos) {
+		
+		mRoundStatus = RoundStatus.CLOSED;
+		
+		mCloserPlayerPos = closerPlayerPos;		
+		
+		// Calculate pair points....
+		
+		int playerPoints[] = getPlayerPoints();
+		
+		int pair1Points = playerPoints[0] + playerPoints[2];
+
+        int pair2Points = playerPoints[1] + playerPoints[3];
+        
+        Log.info("Pair1: "+pair1Points+" points");
+        Log.info("Pair2: "+pair2Points+" points");
+
+        int totalPoints = pair1Points + pair2Points;
+        
+        int addingPoints = (totalPoints-1) / 10 +1;
+        
+        Log.info("Total: "+totalPoints+" points (+"+addingPoints+")");
+
+        int winningPair;
+
+        if (pair1Points < pair2Points) {
+
+            winningPair = 1;
+        }
+        else if (pair2Points < pair1Points) {
+
+            winningPair = 2;
+        }
+        else {
+
+            // pair1Points == pair2Points
+        	
+        	Log.info("This is a tied game");
+
+            // The winner is the hand...
+
+            if ((mHandPlayer == 0) || (mHandPlayer == 2)) {
+
+                // The winner is pair 1...
+
+                winningPair = 1;
+                
+                Log.info("Hand belongs to pair #1");
+            }
+            else {
+
+                winningPair = 2;
+                
+                Log.info("Hand belongs to pair #2");
+            }
+        }
+        
+        Log.info("Winner is pair #"+winningPair);
+        
+        String pair1Text = "Pair1: ("+mPlayers[0].getPlayerName()+" + "+mPlayers[2].getPlayerName()+") ";
+        String pair2Text = "Pair2: ("+mPlayers[1].getPlayerName()+" + "+mPlayers[3].getPlayerName()+") ";
+        
+        if (winningPair == 1) {
+        	
+        	int finalPair1Points = mPair1Points + addingPoints;
+        	
+        	Log.info(pair1Text+mPair1Points+" + "+addingPoints+" = "+finalPair1Points+" points");
+        	
+        	Log.info(pair2Text+mPair2Points+" points");
+        	
+        	mPair1Points += addingPoints;
+        }
+        else if (winningPair == 2) {
+        	
+        	int finalPair2Points = mPair2Points + addingPoints;
+        	
+        	Log.info(pair1Text+mPair1Points+" points");
+        	
+        	Log.info(pair2Text+mPair2Points+" + "+addingPoints+" = "+finalPair2Points+" points");
+        	
+        	mPair2Points += addingPoints;
+        }
+        else {
+
+            Log.error("Incorrect winningPair="+winningPair);
+        }  
+		
+	}
+	
+	public void sendRoundInfoToAllPlayers() {
+		
+		String msgString = CommProtocol.createMsgRoundInfo(this);
+		
+		for(int i=0; i<Game.MAX_PLAYERS; i++) {
+			
+			if (!mPlayers[i].isRobot()) {
+				
+				// Send messages to "real" player...
+				
+				mPlayers[i].sendMessage(msgString);			
+			}
 		}
 	}
 }
