@@ -9,12 +9,16 @@ public class Game {
 	
 	public static final int MAX_PLAYERS = 4;
 	
+	public static final int WINNING_POINTS = 2;
+	
+	
 	public static final String ROBOT_PLAYER_NAME = "Robot";
 	
 	public enum GameStatus {
 		
 		NOT_STARTED,
-		RUNNING
+		RUNNING,
+		FINISHED
 		
 	};
 	
@@ -140,7 +144,8 @@ public class Game {
 		
 		mGameStatus = GameStatus.RUNNING;
 		
-		
+		mPair1Points = 0;
+		mPair2Points = 0;		
 	}
 	
 	public void launchNewRound(int roundCount, MessageHandler msgHandler) {
@@ -246,7 +251,7 @@ public class Game {
 		return -1;
 	}
 	
-	void sendGameInfoToAllPlayers(/*MessageHandler msgHandler*/) {
+	void sendGameInfoToAllPlayers() {
 		
 		String msgString=CommProtocol.createMsgGameInfo(this);
 		
@@ -254,7 +259,7 @@ public class Game {
 			
 			if (!mPlayers[i].isRobot()) {
 				
-				// Send message to "real" player...
+				// Send message only to "real" players...
 		
 				mPlayers[i].sendMessage(msgString);
 			}
@@ -687,5 +692,36 @@ public class Game {
 				mPlayers[i].sendMessage(msgString);			
 			}
 		}
+	}
+	
+	public boolean hasFinished() {
+		
+		boolean gameHasFinished = false;
+		
+		int winningPair;
+		
+		if (mPair1Points >= WINNING_POINTS) {
+			
+			winningPair = 1;
+		}
+		else if (mPair2Points >= WINNING_POINTS) {
+			
+			winningPair = 2;
+		}
+		else {
+			
+			winningPair = -1;
+		}
+		
+		if (winningPair >0 ) {
+			
+			gameHasFinished = true;
+			
+			mGameStatus = GameStatus.FINISHED;
+			
+			Log.info("Game has finished!! Winning pair is Pair #" + winningPair);
+		}
+		
+		return gameHasFinished;
 	}
 }

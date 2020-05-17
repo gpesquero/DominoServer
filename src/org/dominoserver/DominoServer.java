@@ -357,6 +357,23 @@ public class DominoServer {
 				}
 			}
 		}
+		else if (msg.mId==MsgId.REQUEST_GAME_INFO) {
+			
+			String playerName=msg.getArgument("playerName");
+			
+			Log.info("Received Msg REQUEST_GAME_INFO with playerName=<"+playerName+">");
+			
+			Player player = mGame.getPlayer(playerName);
+				
+			if (player == null) {
+				
+				Log.error("Player not found!!");
+			}
+			else {
+				
+				player.sendGameInfo(mGame);
+			}
+		}
 		else if (msg.mId==MsgId.PLAY_TILE) {
 					
 			String playerName=msg.getArgument("playerName");
@@ -411,7 +428,12 @@ public class DominoServer {
 				
 				mGame.sendRoundInfoToAllPlayers();
 				
-				mGame.launchNewRound(mGame.mRoundCount+1, mMessageHandler);
+				if (!mGame.hasFinished()) {
+					
+					// Game is still running. Launch new round...
+				
+					mGame.launchNewRound(mGame.mRoundCount+1, mMessageHandler);
+				}
 				
 				/*
 				int playerPoints[] = mGame.getPlayerPoints();
@@ -432,7 +454,12 @@ public class DominoServer {
 				
 				mGame.sendRoundInfoToAllPlayers();
 				
-				mGame.launchNewRound(mGame.mRoundCount+1, mMessageHandler);
+				if (!mGame.hasFinished()) {
+					
+					// Game is still running. Launch new round...
+					
+					mGame.launchNewRound(mGame.mRoundCount+1, mMessageHandler);
+				}
 				
 				/*
 				int playerPoints[] = mGame.getPlayerPoints();

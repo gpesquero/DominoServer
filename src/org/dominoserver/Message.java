@@ -15,6 +15,7 @@ public class Message {
 		MOVE_PLAYER,
 		LAUNCH_GAME,
 		REQUEST_TILE_INFO,
+		REQUEST_GAME_INFO,
 		PLAY_TILE
 		
 	};

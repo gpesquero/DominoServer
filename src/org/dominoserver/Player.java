@@ -77,6 +77,13 @@ public class Player {
 		mTiles.add(tile);
 	}
 	
+	public void sendGameInfo(Game game) {
+		
+		String msg = CommProtocol.createMsgGameInfo(game);
+				
+		sendMessage(msg);
+	}
+	
 	public void sendGameTileInfo(Game game) {
 		
 		String msg = CommProtocol.createMsgGameTileInfo(game);

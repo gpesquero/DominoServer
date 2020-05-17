@@ -28,6 +28,10 @@ public class CommProtocol {
 			message+="running";
 			break;
 			
+		case FINISHED:
+			message+="finished";
+			break;
+			
 		default:
 			message+="unknown";
 			break;	
@@ -324,6 +328,10 @@ public class CommProtocol {
 		else if (command.compareTo("request_tile_info")==0) {
 			
 			msg.mId=MsgId.REQUEST_TILE_INFO;			
+		}
+		else if (command.compareTo("request_game_info")==0) {
+			
+			msg.mId=MsgId.REQUEST_GAME_INFO;			
 		}
 		else if (command.compareTo("play_tile")==0) {
 			
