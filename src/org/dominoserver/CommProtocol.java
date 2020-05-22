@@ -169,7 +169,16 @@ public class CommProtocol {
 
 		String message="<board_tile_info1";
 		
-		int boardTiles1Count = game.mBoardTiles1.size();
+		int boardTiles1Count;
+		
+		if (game.mBoardTiles1 == null) {
+			
+			boardTiles1Count = 0;
+		}
+		else {
+			
+			boardTiles1Count = game.mBoardTiles1.size();
+		}
 		
 		message+=", tileCount="+boardTiles1Count;
 		
@@ -196,7 +205,16 @@ public class CommProtocol {
 
 		String message="<board_tile_info2";
 		
-		int boardTiles2Count = game.mBoardTiles2.size();
+		int boardTiles2Count;
+		
+		if (game.mBoardTiles2 == null) {
+			
+			boardTiles2Count = 0;
+		}
+		else {
+			
+			boardTiles2Count = game.mBoardTiles2.size();
+		}
 		
 		message+=", tileCount="+boardTiles2Count;
 		

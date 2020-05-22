@@ -9,9 +9,8 @@ public class Game {
 	
 	public static final int MAX_PLAYERS = 4;
 	
-	public static final int WINNING_POINTS = 2;
-	
-	
+	public static final int WINNING_POINTS = 10;
+		
 	public static final String ROBOT_PLAYER_NAME = "Robot";
 	
 	public enum GameStatus {
@@ -81,7 +80,7 @@ public class Game {
 	
 		for(int i=0; i<MAX_PLAYERS; i++) {
 			
-			mPlayers[i]=new Player(i, ROBOT_PLAYER_NAME+i);
+			mPlayers[i]=new Player(i, ROBOT_PLAYER_NAME+(i+1));
 			
 			mPlayers[i].setAsRobot(true);
 		};
@@ -723,5 +722,32 @@ public class Game {
 		}
 		
 		return gameHasFinished;
+	}
+	
+	public String findAvailableRobotName() {
+		
+		for(int i=0; i<MAX_PLAYERS; i++) {
+			
+			String robotName = ROBOT_PLAYER_NAME+(i+1);
+			
+			boolean found = false;
+			
+			for(int j=0; j<MAX_PLAYERS; j++) {
+				
+				if (mPlayers[j].getPlayerName().compareTo(robotName)==0) {
+					
+					found = true;
+					
+					break;
+				}				
+			}
+			
+			if (found == false) {
+				
+				return robotName;
+			}					
+		}
+		
+		return ROBOT_PLAYER_NAME+7;
 	}
 }

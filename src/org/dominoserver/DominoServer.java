@@ -241,7 +241,9 @@ public class DominoServer {
 				
 				Player oldPlayer = mGame.mPlayers[playerPos];
 				
-				Player robotPlayer = new Player(playerPos, Game.ROBOT_PLAYER_NAME+playerPos);
+				String newRobotName = mGame.findAvailableRobotName();
+				
+				Player robotPlayer = new Player(playerPos, newRobotName);
 				
 				robotPlayer.setAsRobot(true);
 				
@@ -279,7 +281,7 @@ public class DominoServer {
 			}
 			*/
 		}
-		else if (msg.mId==MsgId.MOVE_PLAYER) {
+		else if (msg.mId == MsgId.MOVE_PLAYER) {
 			
 			String playerName=msg.getArgument("playerName");
 			int newPos=Integer.parseInt(msg.getArgument("newPos"));
@@ -301,8 +303,10 @@ public class DominoServer {
 				Player aux=mGame.mPlayers[newPos];
 				
 				mGame.mPlayers[newPos]=mGame.mPlayers[playerPos];
+				mGame.mPlayers[newPos].mPlayerPos = newPos;
 				
 				mGame.mPlayers[playerPos]=aux;
+				mGame.mPlayers[playerPos].mPlayerPos = playerPos;
 				
 				mGame.sendGameInfoToAllPlayers();
 				
