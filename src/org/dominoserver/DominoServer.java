@@ -314,21 +314,41 @@ public class DominoServer {
 			}	
 			
 		}
-		else if (msg.mId==MsgId.LAUNCH_GAME) {
+		else if (msg.mId == MsgId.LAUNCH_GAME) {
 			
-			String playerName=msg.getArgument("playerName");
+			String playerName = msg.getArgument("playerName");
 			
 			Log.info("Received Msg LAUNCH_GAME with playerName=<"+playerName+">");
 			
-			if (mGame.getGameStatus()==Game.GameStatus.RUNNING) {
+			if (mGame.getGameStatus() == Game.GameStatus.RUNNING) {
 				
-				Log.error("Game is already running...>");
+				Log.error("Cannot launch game!! Game is already running...");
 			}
 			else {
 				
 				mGame.launchGame();
 				
 				mGame.launchNewRound(0, mMessageHandler);
+			}
+			
+			mGame.sendBoardTilesInfoToAllPlayers();
+			mGame.sendGameTileInfoToAllPlayers();
+			mGame.sendRoundInfoToAllPlayers();
+			mGame.sendGameInfoToAllPlayers();
+		}
+		else if (msg.mId==MsgId.CANCEL_GAME) {
+			
+			String playerName=msg.getArgument("playerName");
+			
+			Log.info("Received Msg CANCEL_GAME with playerName=<"+playerName+">");
+			
+			if (mGame.getGameStatus() != Game.GameStatus.RUNNING) {
+				
+				Log.error("Cannot cancel game!! Game is not running...");
+			}
+			else {
+				
+				mGame.cancelGame();
 			}
 			
 			mGame.sendBoardTilesInfoToAllPlayers();

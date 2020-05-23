@@ -9,7 +9,7 @@ public class Game {
 	
 	public static final int MAX_PLAYERS = 4;
 	
-	public static final int WINNING_POINTS = 10;
+	public static final int WINNING_POINTS = 30;
 		
 	public static final String ROBOT_PLAYER_NAME = "Robot";
 	
@@ -17,7 +17,8 @@ public class Game {
 		
 		NOT_STARTED,
 		RUNNING,
-		FINISHED
+		FINISHED,
+		CANCELLED
 		
 	};
 	
@@ -137,6 +138,11 @@ public class Game {
 			
 			Log.info("Player["+i+"] is <"+playerName+">");
 		}
+	}
+	
+	public void cancelGame() {
+		
+		mGameStatus = GameStatus.CANCELLED;	
 	}
 	
 	public void launchGame() {

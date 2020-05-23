@@ -32,6 +32,10 @@ public class CommProtocol {
 			message+="finished";
 			break;
 			
+		case CANCELLED:
+			message+="cancelled";
+			break;
+			
 		default:
 			message+="unknown";
 			break;	
@@ -342,6 +346,10 @@ public class CommProtocol {
 		else if (command.compareTo("launch_game")==0) {
 			
 			msg.mId=MsgId.LAUNCH_GAME;			
+		}
+		else if (command.compareTo("cancel_game")==0) {
+			
+			msg.mId=MsgId.CANCEL_GAME;			
 		}
 		else if (command.compareTo("request_tile_info")==0) {
 			
