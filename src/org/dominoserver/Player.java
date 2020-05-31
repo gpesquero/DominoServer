@@ -51,7 +51,7 @@ public class Player {
 			return false;
 		}
 		
-		Log.info("Player sendMessage(): "+msg);
+		Log.debug("Player sendMessage(): "+msg);
 		
 		return mConnection.sendMessage(msg);
 	}
@@ -151,7 +151,7 @@ public class Player {
 			
 			if (playableTiles.size() == 0) {
 				
-				Log.info("Robot.playTurn() No playableTiles. Robot has to pass...");
+				Log.debug("Robot.playTurn() No playableTiles. Robot has to pass...");
 				
 				playTile(msgHandler, null, 0);
 			}
@@ -166,7 +166,7 @@ public class Player {
 				DominoTile tile = playableTiles.get(0).getKey();
 				Integer boardSide = playableTiles.get(0).getValue();
 				
-				Log.info("Robot.playTurn() Play tile="+tile.mNumber1+"-"+tile.mNumber2+
+				Log.debug("Robot.playTurn() Play tile="+tile.mNumber1+"-"+tile.mNumber2+
 						", boardSide="+boardSide);
 				
 				/*

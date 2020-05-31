@@ -25,6 +25,11 @@ public class Log {
 		log(" (INFO)", text);
 	}
 
+	public static void debug(String text) {
+		
+		//log(" (DEBUG)", text);
+	}
+
 	public static void error(String text) {
 		
 		log(" ((((ERROR))))", text);		

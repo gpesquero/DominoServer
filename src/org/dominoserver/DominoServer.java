@@ -10,6 +10,8 @@ public class DominoServer {
 
 	private static final String APP_NAME = "DominoServer";
 	
+	private static final String VERSION_NAME = "0.01";
+	
 	public static final int TILES_PER_PLAYER = 7;
 	
 	private static final int TIMER_TIMEOUT = 5000;
@@ -49,7 +51,7 @@ public class DominoServer {
 					
 				} catch (InterruptedException e) {
 					
-					Log.info("Timer thread sleep interrupted!!");
+					Log.error("Timer thread sleep interrupted!!");
 					
 					mRun=false;
 				}
@@ -63,7 +65,7 @@ public class DominoServer {
 	
 	public DominoServer() {
 		
-		Log.info("SERVER: Starting <"+APP_NAME+">...");
+		Log.info("SERVER: Starting '"+APP_NAME+"' (version "+VERSION_NAME+")...");
 		
 		mMessageHandler=new MessageHandler();
 		
@@ -360,7 +362,7 @@ public class DominoServer {
 			
 			String playerName=msg.getArgument("playerName");
 			
-			Log.info("Received Msg REQUEST_TILE_INFO with playerName=<"+playerName+">");
+			Log.debug("Received Msg REQUEST_TILE_INFO with playerName=<"+playerName+">");
 			
 			if (mGame.getGameStatus() == Game.GameStatus.NOT_STARTED) {
 				
@@ -385,7 +387,7 @@ public class DominoServer {
 			
 			String playerName=msg.getArgument("playerName");
 			
-			Log.info("Received Msg REQUEST_GAME_INFO with playerName=<"+playerName+">");
+			Log.debug("Received Msg REQUEST_GAME_INFO with playerName=<"+playerName+">");
 			
 			Player player = mGame.getPlayer(playerName);
 				
@@ -404,7 +406,17 @@ public class DominoServer {
 			
 			int playerPos=Integer.parseInt(msg.getArgument("playerPos"));
 			
-			Log.info("Received Msg PLAY_TILE with playerName=<"+playerName+"> and playerPos="+playerPos);
+			Log.debug("Received Msg PLAY_TILE with playerName=<"+playerName+"> and playerPos="+playerPos);
+			
+			// Check if it's the turn of the player...
+			
+			if (mGame.mTurnPlayer != playerPos) {
+				
+				
+				Log.error("It's not the turn of player #"+playerPos);
+				
+				return run;
+			}
 			
 			int boardSide = Integer.parseInt(msg.getArgument("boardSide"));
 			
@@ -418,7 +430,9 @@ public class DominoServer {
 				
 				tile = null;
 				
-				Log.info("Player <"+playerName+"> and pos="+playerPos+" has passed");
+				Log.info("Player #"+playerPos+" <"+playerName+"> has passed");
+				
+				mGame.sendPlayedTileInfoToAllPlayers(player, tile);
 			}
 			else {
 				
@@ -432,7 +446,9 @@ public class DominoServer {
 			
 	            tile = new DominoTile(number1, number2);
 	            
-	            Log.info("Tile played="+tile.mNumber1+"-"+tile.mNumber2+", boardSide="+boardSide);
+	            Log.info("Player #"+playerPos+" <"+playerName+"> has played tile=["+tile.mNumber1+"-"+tile.mNumber2+"] on boardSide="+boardSide);
+	            
+	            mGame.sendPlayedTileInfoToAllPlayers(player, tile);
 	            
 	            if (!player.removeTile(tile.mNumber1, tile.mNumber2)) {
 	            	
@@ -446,7 +462,7 @@ public class DominoServer {
 				
 				// Player has won the round...
 				
-				Log.info("Player"+playerPos+" <"+player.getPlayerName()+"> has won the round");
+				Log.info("Player #"+playerPos+" <"+player.getPlayerName()+"> has won the round");
 				
 				mGame.setWinnerPlayer(playerPos);
 				

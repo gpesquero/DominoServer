@@ -18,8 +18,7 @@ public class Game {
 		NOT_STARTED,
 		RUNNING,
 		FINISHED,
-		CANCELLED
-		
+		CANCELLED		
 	};
 	
 	public enum RoundStatus {
@@ -27,8 +26,7 @@ public class Game {
 		NOT_STARTED,
 		RUNNING,
 		WON,
-		CLOSED
-		
+		CLOSED		
 	};
 	
 	public GameStatus mGameStatus = GameStatus.NOT_STARTED;
@@ -426,7 +424,7 @@ public class Game {
 			*/
 		}
 		
-		Log.info("addPlayedTile(): Tile <"+tile.mNumber1+"-"+tile.mNumber2+"> added in boardSide="+boardSide);
+		Log.debug("addPlayedTile(): Tile <"+tile.mNumber1+"-"+tile.mNumber2+"> added in boardSide="+boardSide);
 		
 		return true;
 	}
@@ -442,7 +440,7 @@ public class Game {
 		
 		if (mPlayers[mTurnPlayer].isRobot()) {
 			
-			Log.info("increaseTurnPlayer(): Next player is a robot...");
+			Log.debug("increaseTurnPlayer(): Next player is a robot...");
 			
 			// It's the turn of this robot
 			
@@ -535,7 +533,7 @@ public class Game {
 			
 			points[i]=player.getPoints();	
 			
-			Log.info("Player"+player.mPlayerPos+" <"+player.getPlayerName()+"> has "+points[i]+" points");
+			Log.info("Player #"+player.mPlayerPos+" <"+player.getPlayerName()+"> has "+points[i]+" points");
 		}		
 		
 		return points;
@@ -545,7 +543,7 @@ public class Game {
 		
 		mRoundStatus = RoundStatus.WON;
 		
-		Log.info("setWinnerPlayer() winner is player in pos="+winnerPlayerPos+" with name <"+
+		Log.debug("setWinnerPlayer() winner is player in pos="+winnerPlayerPos+" with name <"+
 					mPlayers[winnerPlayerPos].getPlayerName());
 		
 		mWinnerPlayerPos = winnerPlayerPos;
@@ -755,5 +753,20 @@ public class Game {
 		}
 		
 		return ROBOT_PLAYER_NAME+7;
+	}
+	
+	public void sendPlayedTileInfoToAllPlayers(Player player, DominoTile tile) {
+		
+		String msgString = CommProtocol.createMsgPlayedTile(player, tile);
+		
+		for(int i=0; i<Game.MAX_PLAYERS; i++) {
+			
+			if (!mPlayers[i].isRobot()) {
+				
+				// Send messages to "real" player...
+				
+				mPlayers[i].sendMessage(msgString);			
+			}
+		}		
 	}
 }

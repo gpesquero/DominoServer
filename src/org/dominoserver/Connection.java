@@ -35,11 +35,11 @@ public class Connection extends Thread {
         	
         	String inputLine;
         	
-        	Log.info("Player Thread.run()");
+        	Log.debug("Player Thread.run()");
         	
             while((inputLine=in.readLine())!=null) {
         		
-        		Log.info("Received Message: "+inputLine);
+        		Log.debug("Received Message: "+inputLine);
         		
         		Message msg = CommProtocol.processLine(inputLine);
         		

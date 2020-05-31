@@ -205,6 +205,28 @@ public class CommProtocol {
 		return message;
 	}
 	
+	static public String createMsgPlayedTile(Player player, DominoTile tile) {
+		
+		String message = "<played_tile_info";
+		
+		message += ", playerName=" + player.getPlayerName();
+		
+		message += ", playedTile=";
+		
+		if (tile == null) {
+			
+			message += "null";
+		}
+		else {
+			
+			message += tile.mNumber1+"-"+tile.mNumber2;			
+		}
+				
+		message+=">";
+		
+		return message;		
+	}
+	
 	static public String createMsgBoardTilesInfo2(Game game) {
 
 		String message="<board_tile_info2";
