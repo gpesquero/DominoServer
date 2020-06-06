@@ -10,7 +10,7 @@ public class DominoServer {
 
 	private static final String APP_NAME = "DominoServer";
 	
-	private static final String VERSION_NAME = "0.01";
+	private static final String VERSION_NAME = "0.02";
 	
 	public static final int TILES_PER_PLAYER = 7;
 	
@@ -175,15 +175,11 @@ public class DominoServer {
 					
 					player=new Player(playerPos, playerName);
 					
-					//newPlayer.setMessageHandler(mMessageHandler);
-					//newPlayer.setSocket(msg.mSocket);
-					
 					player.setConnection(msg.mConnection);
 					
 					mGame.mPlayers[playerPos]=player;
 				
 					// Start the player thread...
-					//newPlayer.start();
 					
 					Log.info("SERVER: Created new player <"+playerName+">");
 				}
@@ -195,17 +191,6 @@ public class DominoServer {
 				player=mGame.mPlayers[playerPos];
 				
 				player.setConnection(msg.mConnection);
-				
-				/*
-				if (player.isAlive()) {
-					
-					existingPlayer.interrupt();
-				}
-				
-				existingPlayer.setSocket(msg.mSocket);
-				
-				existingPlayer.start();
-				*/
 			}
 			
 			if (player!=null) {
@@ -265,23 +250,6 @@ public class DominoServer {
 		}
 		else if (msg.mId==MsgId.TIMER) {
 			
-			//printPlayers();
-			
-			
-			
-			/*
-			// Send a <ping> to every active player...
-			
-			String msgString=CommProtocol.createMsgPing();
-			
-			for(int i=0; i<MAX_PLAYERS; i++) {
-				
-				if (mPlayers[i]!=null) {
-					
-					boolean error=mPlayers[i].sendMessage(msgString);						
-				}
-			}
-			*/
 		}
 		else if (msg.mId == MsgId.MOVE_PLAYER) {
 			
@@ -446,6 +414,12 @@ public class DominoServer {
 			
 	            tile = new DominoTile(number1, number2);
 	            
+	            if (!mGame.addPlayedTile(tile, boardSide)) {
+	            	
+	            	Log.error("Cannot add tile of player #"+playerPos+" <"+playerName+"> played tile=["+tile.mNumber1+"-"+tile.mNumber2+"] on boardSide="+boardSide);	            	
+	            	
+	            }
+	            
 	            Log.info("Player #"+playerPos+" <"+playerName+"> has played tile=["+tile.mNumber1+"-"+tile.mNumber2+"] on boardSide="+boardSide);
 	            
 	            mGame.sendPlayedTileInfoToAllPlayers(player, tile);
@@ -455,7 +429,7 @@ public class DominoServer {
 	            	Log.error("Player.removeTile() tile="+tile.mNumber1+"-"+tile.mNumber2+" not found");
 	            }
 	            
-	            mGame.addPlayedTile(tile, boardSide);
+	            
 			}
 			
 			if (player.mTiles.size() == 0) {
@@ -474,15 +448,6 @@ public class DominoServer {
 				
 					mGame.launchNewRound(mGame.mRoundCount+1, mMessageHandler);
 				}
-				
-				/*
-				int playerPoints[] = mGame.getPlayerPoints();
-				
-				String msgString = CommProtocol.createMsgRoundInfo(mGame, playerPos);
-				
-				Log.info("MsgRoundWon: "+msgString);
-				*/				
-				
 			}
 			else if (mGame.isClosed()) {
 				
@@ -500,15 +465,6 @@ public class DominoServer {
 					
 					mGame.launchNewRound(mGame.mRoundCount+1, mMessageHandler);
 				}
-				
-				/*
-				int playerPoints[] = mGame.getPlayerPoints();
-				
-				String msgString = CommProtocol.createMsgGameClosed(mGame, playerPos);
-				
-				Log.info("MsgGameClosed: "+msgString);
-				*/			
-				
 			}
 			else {				
 				

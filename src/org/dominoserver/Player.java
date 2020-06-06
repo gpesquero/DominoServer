@@ -29,13 +29,6 @@ public class Player {
 		
 		mPlayerName=playerName;
 	}
-	
-	/*
-	public void setSocket(Socket clientSocket) {
-		
-		mSocket=clientSocket;		
-	}
-	*/
 
 	public void setConnection(Connection connection) {
 		
@@ -157,28 +150,54 @@ public class Player {
 			}
 			else {
 				
-				long seed = System.currentTimeMillis();
+				// Force a robot to play in one side of the board
+				// If forceSide == 0, the play on any side
 				
-				Random random = new Random(seed);
+				int forceSide = 0;
 				
-				Collections.shuffle(playableTiles, random);
+				boolean tilePlayed = false;
 				
-				DominoTile tile = playableTiles.get(0).getKey();
-				Integer boardSide = playableTiles.get(0).getValue();
-				
-				Log.debug("Robot.playTurn() Play tile="+tile.mNumber1+"-"+tile.mNumber2+
-						", boardSide="+boardSide);
-				
-				/*
-				DominoTile removedTile = removeTile(tile.mNumber1, tile.mNumber2);
-				
-				if (removedTile == null) {
+				if (forceSide > 0) {
 					
-					Log.info("Robot removedTile() returned null");
+					// Force one side...
+					
+					for(int i=0; i<playableTiles.size(); i++) {
+						
+						if (playableTiles.get(i).getValue() == forceSide) {
+							
+							DominoTile tile = playableTiles.get(i).getKey();
+							Integer boardSide = playableTiles.get(i).getValue();
+							
+							Log.debug("Robot.playTurn() Play tile="+tile.mNumber1+"-"+tile.mNumber2+
+									", boardSide="+boardSide);
+							
+							playTile(msgHandler, tile, boardSide);
+							
+							tilePlayed = true;
+							
+							break;
+						}
+					}
 				}
-				*/
 				
-				playTile(msgHandler, tile, boardSide);
+				if (!tilePlayed) {
+					
+					// Play a random tile...
+					
+					long seed = System.currentTimeMillis();
+					
+					Random random = new Random(seed);
+					
+					Collections.shuffle(playableTiles, random);
+					
+					DominoTile tile = playableTiles.get(0).getKey();
+					Integer boardSide = playableTiles.get(0).getValue();
+					
+					Log.debug("Robot.playTurn() Play tile="+tile.mNumber1+"-"+tile.mNumber2+
+							", boardSide="+boardSide);
+					
+					playTile(msgHandler, tile, boardSide);
+				}
 			}
 		}
 		

@@ -57,8 +57,6 @@ public class CommListener extends Thread {
 				
 				Message msg=new Message(MsgId.NEW_CONNECTION);
 				
-				//msg.setSocket(clientSocket);
-				
 				msg.setConnection(conn);
 				
 				mMessageHandler.addMessage(msg);
@@ -79,6 +77,7 @@ public class CommListener extends Thread {
 		}
 		
 		try {
+			
 			mServerSocket.close();
 			
 			Log.info("ServerSocket closed !!!");
@@ -92,6 +91,7 @@ public class CommListener extends Thread {
 	public void close() {
 		
 		try {
+			
 			mServerSocket.close();
 			
 			Log.info("ServerSocket closed !!!");

@@ -229,9 +229,6 @@ public class Game {
 			
 			mPlayers[mTurnPlayer].playTurn(this, msgHandler);
 		}
-					
-		
-		//Log.info("Remaining tiles: "+allTiles.size());
 	}
 	
 	private int getPlayerWithDoubleSixTile() {
@@ -346,6 +343,8 @@ public class Game {
 					
 					Log.error("addPlayedTile(): Played tile <"+tile.mNumber1+"-"+tile.mNumber2+
 							"> cannot be placed in the board");
+					
+					return false;
 				}
 			}
 			else if (boardSide == 2) {
@@ -379,6 +378,8 @@ public class Game {
 					
 					Log.error("addPlayedTile(): Played tile <"+tile.mNumber1+"-"+tile.mNumber2+
 							"> cannot be placed in the board");
+					
+					return false;
 				}
 			}
 			else {
@@ -387,41 +388,6 @@ public class Game {
 				
 				return false;
 			}
-			
-			/*
-			// Check if the played tile has the "endNumber"
-			
-			if (tile.mNumber1 == endNumber) {
-				
-				if (boardSide == 1) {
-					
-					mBoardTiles1.add(tile);
-				}
-				else {
-					
-					mBoardTiles2.add(tile);
-				}
-			}
-			else if (tile.mNumber2 == endNumber) {
-				
-				tile.swapNumbers();
-				
-				if (boardSide == 1) {
-					
-					mBoardTiles1.add(tile);
-				}
-				else {
-					
-					mBoardTiles2.add(tile);
-				}
-			}
-			else {
-				
-				Log.error("addPlayedTile(): Played tile cannot be placed in the board");
-				
-				return false;
-			}
-			*/
 		}
 		
 		Log.debug("addPlayedTile(): Tile <"+tile.mNumber1+"-"+tile.mNumber2+"> added in boardSide="+boardSide);
