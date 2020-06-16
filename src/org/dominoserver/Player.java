@@ -362,4 +362,21 @@ public class Player {
 		
 		return points;
 	}
+	
+	public String getTilesString() {
+		
+		String tiles = "";
+		
+		Iterator<DominoTile> iter = mTiles.iterator();
+		
+		while (iter.hasNext()) {
+			
+			DominoTile tile = iter.next();
+			
+			tiles += tile.mNumber1;
+			tiles += tile.mNumber2;
+		}
+		
+		return tiles;
+	}
 }

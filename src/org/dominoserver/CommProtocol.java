@@ -120,6 +120,10 @@ public class CommProtocol {
 				int points = game.mPlayers[i].getPoints();
 				
 				message+=", player"+i+"Points="+points;
+				
+				String tilesString = game.mPlayers[i].getTilesString();
+				
+				message+=", player"+i+"Tiles="+tilesString;
 			}
 		}
 		

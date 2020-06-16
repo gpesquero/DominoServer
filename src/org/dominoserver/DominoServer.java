@@ -10,7 +10,7 @@ public class DominoServer {
 
 	private static final String APP_NAME = "DominoServer";
 	
-	private static final String VERSION_NAME = "0.02";
+	private static final String VERSION_NAME = "0.03";
 	
 	public static final int TILES_PER_PLAYER = 7;
 	
@@ -130,7 +130,9 @@ public class DominoServer {
 			
 			String playerName=msg.getArgument("playerName");
 			
-			Log.info("Received Msg LOG_IN with playerName=<"+playerName+">");			
+			String appVer=msg.getArgument("appVer");
+			
+			Log.info("Received Msg LOG_IN with playerName=<"+playerName+">, appVer=<"+appVer+">");			
 			
 			// First, check if we already have a player with that name...
 			
