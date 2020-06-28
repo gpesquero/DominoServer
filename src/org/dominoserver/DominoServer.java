@@ -6,11 +6,13 @@ import java.util.ArrayList;
 import org.dominoserver.Game.GameStatus;
 import org.dominoserver.Message.MsgId;
 
+import sun.misc.Version;
+
 public class DominoServer {
 
-	private static final String APP_NAME = "DominoServer";
+	public static final String APP_NAME = "DominoServer";
 	
-	private static final String VERSION_NAME = "0.03";
+	private static final String VERSION_NAME = "0.04";
 	
 	public static final int TILES_PER_PLAYER = 7;
 	
@@ -66,6 +68,10 @@ public class DominoServer {
 	public DominoServer() {
 		
 		Log.info("SERVER: Starting '"+APP_NAME+"' (version "+VERSION_NAME+")...");
+		
+		String javaVersion = System.getProperty("java.version");
+		
+		Log.info("Java Version: " + javaVersion);		
 		
 		mMessageHandler=new MessageHandler();
 		
