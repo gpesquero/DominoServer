@@ -6,13 +6,12 @@ import java.util.ArrayList;
 import org.dominoserver.Game.GameStatus;
 import org.dominoserver.Message.MsgId;
 
-import sun.misc.Version;
-
 public class DominoServer {
 
 	public static final String APP_NAME = "DominoServer";
 	
-	private static final String VERSION_NAME = "0.04";
+	private static final String VERSION_NAME = "0.05";
+	private static final String VERSION_DATE= "Oct 9 2020";
 	
 	public static final int TILES_PER_PLAYER = 7;
 	
@@ -67,7 +66,8 @@ public class DominoServer {
 	
 	public DominoServer() {
 		
-		Log.info("SERVER: Starting '"+APP_NAME+"' (version "+VERSION_NAME+")...");
+		Log.info("SERVER: Starting '"+APP_NAME+"' (v"+VERSION_NAME+", "+
+				VERSION_DATE+")...");
 		
 		String javaVersion = System.getProperty("java.version");
 		
@@ -386,8 +386,7 @@ public class DominoServer {
 			
 			// Check if it's the turn of the player...
 			
-			if (mGame.mTurnPlayer != playerPos) {
-				
+			if (mGame.mTurnPlayer != playerPos) {				
 				
 				Log.error("It's not the turn of player #"+playerPos);
 				
@@ -437,7 +436,11 @@ public class DominoServer {
 	            	Log.error("Player.removeTile() tile="+tile.mNumber1+"-"+tile.mNumber2+" not found");
 	            }
 	            
-	            
+	            if (!player.isRobot()) {
+	            	
+	            	// Send updated tile info to 'real' player
+		            player.sendGameTileInfo(mGame);
+	            }
 			}
 			
 			if (player.mTiles.size() == 0) {

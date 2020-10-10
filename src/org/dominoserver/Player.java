@@ -7,8 +7,6 @@ import java.util.Random;
 
 import org.dominoserver.Message.MsgId;
 
-import javafx.util.Pair;
-
 public class Player {
 	
 	private final static long ROBOT_PLAY_TILE_TIMEOUT = 3000;
@@ -140,7 +138,7 @@ public class Player {
 			int endNumber2 = game.getEndNumber2();
 			
 			
-			ArrayList<Pair<DominoTile, Integer>> playableTiles = getPlayableTiles(endNumber1, endNumber2);
+			ArrayList<MyPair<DominoTile, Integer>> playableTiles = getPlayableTiles(endNumber1, endNumber2);
 			
 			if (playableTiles.size() == 0) {
 				
@@ -301,9 +299,9 @@ public class Player {
 		sendMessage(msgString2);
 	}
 	
-	private ArrayList<Pair<DominoTile, Integer>> getPlayableTiles(int endNumber1, int endNumber2) {
+	private ArrayList<MyPair<DominoTile, Integer>> getPlayableTiles(int endNumber1, int endNumber2) {
 		
-		ArrayList<Pair<DominoTile, Integer>> playableTiles = new ArrayList<Pair<DominoTile, Integer>>();
+		ArrayList<MyPair<DominoTile, Integer>> playableTiles = new ArrayList<MyPair<DominoTile, Integer>>();
 		
 		Iterator<DominoTile> iter = mTiles.iterator();
 		
@@ -313,14 +311,14 @@ public class Player {
 			
 			if ((tile.mNumber1 == endNumber1) || (tile.mNumber2 == endNumber1)) {
 				
-				Pair<DominoTile, Integer> pair = new Pair<DominoTile, Integer> (tile, 1);
+				MyPair<DominoTile, Integer> pair = new MyPair<DominoTile, Integer> (tile, 1);
 				
 				playableTiles.add(pair);				
 			}
 			
 			if ((tile.mNumber1 == endNumber2) || (tile.mNumber2 == endNumber2)) {
 				
-				Pair<DominoTile, Integer> pair = new Pair<DominoTile, Integer> (tile, 2);
+				MyPair<DominoTile, Integer> pair = new MyPair<DominoTile, Integer> (tile, 2);
 				
 				playableTiles.add(pair);				
 			}

@@ -5,7 +5,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-import org.dominoserver.Message;
 import org.dominoserver.Message.MsgId;
 
 public class CommListener extends Thread {
