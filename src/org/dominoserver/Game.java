@@ -9,9 +9,13 @@ public class Game {
 	
 	public static final int MAX_PLAYERS = 4;
 	
+	public static final int TILES_PER_PLAYER = 7;
+	
 	public static final int WINNING_POINTS = 30;
 		
 	public static final String ROBOT_PLAYER_NAME = "Robot";
+	
+	private static final int SHUFFLE_TIMES = 5;
 	
 	public enum GameStatus {
 		
@@ -163,11 +167,16 @@ public class Game {
 		
 		// Shuffle domino tiles...
 		
-		long seed = System.currentTimeMillis();
+		Log.info("Shuffling domino tiles "+SHUFFLE_TIMES+" times...");
 		
-		Random random = new Random(seed);
+		for (int i=0; i<SHUFFLE_TIMES; i++) {
+			
+			long seed = System.currentTimeMillis();
 		
-		Collections.shuffle(allTiles, random);
+			Random random = new Random(seed);
+		
+			Collections.shuffle(allTiles, random);
+		}
 		
 		Log.info("Shuffled all tiles...");
 		
@@ -178,7 +187,7 @@ public class Game {
 			// First, remove any existing tile from player
 			mPlayers[i].mTiles.clear();
 			
-			for(int j=0; j<DominoServer.TILES_PER_PLAYER; j++) {
+			for(int j=0; j<TILES_PER_PLAYER; j++) {
 				
 				mPlayers[i].addTile(allTiles.remove(0));
 			}

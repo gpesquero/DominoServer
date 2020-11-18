@@ -10,17 +10,28 @@ public class DominoServer {
 
 	public static final String APP_NAME = "DominoServer";
 	
-	private static final String VERSION_NAME = "0.05";
-	private static final String VERSION_DATE= "Oct 9 2020";
+	private static final String VERSION_NAME = "0.06";
+	private static final String VERSION_DATE= "Nov 18 2020";
 	
-	public static final int TILES_PER_PLAYER = 7;
+	// Timer timeout every 10 seconds
+	private static final int TIMER_TIMEOUT = 10000;
 	
-	private static final int TIMER_TIMEOUT = 5000;
+	// Inactivity timeout (in minutes)
+	private static final int INACTIVITY_TIMEOUT = 30;
 	
 	public static void main(String[] args) {
 		
-		new DominoServer();
-		
+		// Parse arguments...
+		for(int i=0; i<args.length; i++) {
+			
+			if (args[i].compareTo("--debug")==0) {
+				
+				Log.mShowDebugLogs = true;
+			}
+			
+		}
+
+		new DominoServer();	
 	}
 	
 	TimerThread mTimerThread=null;
@@ -33,6 +44,9 @@ public class DominoServer {
 	
 	ArrayList<Connection> mConnections=null;
 	
+	// Last activity time
+	private long mActivityTime;
+		
 	private class TimerThread extends Thread {
 		
 		public boolean mRun=true;
@@ -71,7 +85,9 @@ public class DominoServer {
 		
 		String javaVersion = System.getProperty("java.version");
 		
-		Log.info("Java Version: " + javaVersion);		
+		Log.info("Java Version: " + javaVersion);
+		
+		Log.info("Show debug logs: " + Log.mShowDebugLogs);
 		
 		mMessageHandler=new MessageHandler();
 		
@@ -86,6 +102,9 @@ public class DominoServer {
 		printConnections();
 		
 		mGame.printPlayers();
+		
+		// Set activity time to current time
+		mActivityTime = System.currentTimeMillis();
 		
 		// Start timer...
 		mTimerThread=new TimerThread();
@@ -126,7 +145,15 @@ public class DominoServer {
 		
 			return false;
 		}
-	
+		
+		if (msg.mId != MsgId.TIMER) {
+			
+			// We have received a message different from timer
+			// Update activity time
+			
+			mActivityTime = System.currentTimeMillis();
+		}
+		
 		if (msg.mId==MsgId.NEW_CONNECTION) {
 			
 			mConnections.add(msg.mConnection);
@@ -247,6 +274,8 @@ public class DominoServer {
 				String msgString = CommProtocol.createMsgGameInfo(mGame);
 				
 				oldPlayer.sendMessage(msgString);
+				
+				oldPlayer.closeConnection();
 			}
 			
 			mGame.sendBoardTilesInfoToAllPlayers();
@@ -258,6 +287,33 @@ public class DominoServer {
 		}
 		else if (msg.mId==MsgId.TIMER) {
 			
+			// Get current time
+			long currentTime=System.currentTimeMillis();
+			
+			// Calculate max inactivity timeout (in milliseconds)
+			long inactivityTimeout=INACTIVITY_TIMEOUT*60*1000;
+			
+			if (currentTime > (mActivityTime+inactivityTimeout) ) {
+				
+				// Inactivity timeout has been reached...
+				
+				Log.info("Inactivity timeout ("+INACTIVITY_TIMEOUT+
+						" min.) has been reached");
+				
+				if (mConnections.size()>0) {
+					
+					Log.info("There are "+mConnections.size()+" active connections. "+
+							 "Killing them...");
+					
+					closeAllConnections();
+				}
+				else {
+					
+					Log.info("There are no active connections");
+				}
+				
+				mActivityTime=currentTime;
+			}
 		}
 		else if (msg.mId == MsgId.MOVE_PLAYER) {
 			
@@ -506,4 +562,34 @@ public class DominoServer {
 		Log.info("Number of active connections="+mConnections.size());
 	}
 	
+	private void closeAllConnections() {
+		
+		for(int playerPos=0; playerPos<Game.MAX_PLAYERS; playerPos++) {
+			
+			mGame.mPlayers[playerPos].closeConnection();
+			
+			String newRobotName = mGame.findAvailableRobotName();
+			
+			Player robotPlayer = new Player(playerPos, newRobotName);
+			
+			robotPlayer.setAsRobot(true);
+			
+			mGame.mPlayers[playerPos] = robotPlayer;
+		}
+		
+		while (mConnections.size()>0) {
+			
+			Connection connection = mConnections.remove(0);
+			
+			connection.close();
+		}
+		
+		mGame = new Game();
+		
+		mGame.initPlayers();
+		
+		printConnections();
+		
+		mGame.printPlayers();
+	}
 }

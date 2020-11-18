@@ -63,13 +63,13 @@ public class CommListener extends Thread {
 			}
 			catch (SocketException e) {
 				
-				Log.error("ServerSocket accept() SocketException: "+e.getMessage());
+				Log.warning("ServerSocket accept() SocketException: "+e.getMessage());
 				
 				mContinue=false;				
 			}
 			catch (IOException e) {
 				
-				Log.error("ServerSocket accept() IOException: "+e.getMessage());
+				Log.warning("ServerSocket accept() IOException: "+e.getMessage());
 				
 				mContinue=false;				
 			}

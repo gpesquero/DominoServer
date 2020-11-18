@@ -33,6 +33,14 @@ public class Player {
 		mConnection=connection;		
 	}
 	
+	public void closeConnection() {
+		
+		if (mConnection != null) {
+			
+			mConnection.close();
+		}
+	}
+	
 	public boolean sendMessage(String msg) {
 		
 		if (mConnection==null) {

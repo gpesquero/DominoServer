@@ -13,6 +13,8 @@ public class Log {
 	
 	private static String mLogDateString = null;
 	
+	public static boolean mShowDebugLogs = false;
+	
 	private static void log(String typeString, String text) {
 		
 		LocalDateTime time=LocalDateTime.now();
@@ -103,7 +105,15 @@ public class Log {
 
 	public static void debug(String text) {
 		
-		//log("(DEBUG)", text);
+		if (mShowDebugLogs) {
+			
+			log("(DEBUG)", text);
+		}
+	}
+
+	public static void warning(String text) {
+		
+		log("((((WARNING))))", text);		
 	}
 
 	public static void error(String text) {

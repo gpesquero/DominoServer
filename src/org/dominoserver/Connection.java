@@ -53,7 +53,7 @@ public class Connection extends Thread {
         }
         catch(IOException e) {
         	
-        	Log.error("Connection.run() IOException error: "+e.getMessage());
+        	Log.warning("Connection.run() IOException error: "+e.getMessage());
         }
 	}
 	
@@ -76,5 +76,31 @@ public class Connection extends Thread {
 		}
 		
 		return true;
+	}
+	
+	public void close() {
+		
+		try {
+			
+			if (mOutWriter != null) {
+				
+				mOutWriter.close();
+			
+				mOutWriter=null;
+			}
+			
+			if (mSocket != null) {
+				
+				mSocket.close();
+			
+				mSocket=null;
+			}
+		}
+		catch (IOException e) {
+			
+			Log.warning("Connection.close() IOException");
+		}
+		
+		interrupt();
 	}
 }
