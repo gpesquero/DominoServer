@@ -2,6 +2,8 @@ package org.dominoserver;
 
 import java.util.ArrayList;
 
+import org.utilslibrary.Log;
+
 public class DominoTile {
 	
 	public int mNumber1;

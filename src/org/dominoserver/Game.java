@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Random;
 
+import org.utilslibrary.Log;
+
 public class Game {
 	
 	public static final int MAX_PLAYERS = 4;

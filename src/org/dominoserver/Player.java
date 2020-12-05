@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Random;
 
 import org.dominoserver.Message.MsgId;
+import org.utilslibrary.Log;
 
 public class Player {
 	

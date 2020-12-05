@@ -5,13 +5,14 @@ import java.util.ArrayList;
 
 import org.dominoserver.Game.GameStatus;
 import org.dominoserver.Message.MsgId;
+import org.utilslibrary.Log;
 
 public class DominoServer {
 
 	public static final String APP_NAME = "DominoServer";
 	
-	private static final String VERSION_NAME = "0.06";
-	private static final String VERSION_DATE= "Nov 18 2020";
+	private static final String VERSION_NAME = "0.07";
+	private static final String VERSION_DATE= "Dec 05 2020";
 	
 	// Timer timeout every 10 seconds
 	private static final int TIMER_TIMEOUT = 10000;
@@ -26,9 +27,8 @@ public class DominoServer {
 			
 			if (args[i].compareTo("--debug")==0) {
 				
-				Log.mShowDebugLogs = true;
-			}
-			
+				Log.showDebugLogs(true);
+			}		
 		}
 
 		new DominoServer();	
@@ -80,6 +80,8 @@ public class DominoServer {
 	
 	public DominoServer() {
 		
+		Log.logToFile(true, APP_NAME, "./logs");
+		
 		Log.info("SERVER: Starting '"+APP_NAME+"' (v"+VERSION_NAME+", "+
 				VERSION_DATE+")...");
 		
@@ -87,7 +89,7 @@ public class DominoServer {
 		
 		Log.info("Java Version: " + javaVersion);
 		
-		Log.info("Show debug logs: " + Log.mShowDebugLogs);
+		Log.info("Show debug logs: " + Log.isShowDebugEnabled());
 		
 		mMessageHandler=new MessageHandler();
 		

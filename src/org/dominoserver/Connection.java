@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import org.utilslibrary.Log;
+
 public class Connection extends Thread {
 	
 	private Socket mSocket=null;

@@ -3,6 +3,8 @@ package org.dominoserver;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
+import org.utilslibrary.Log;
+
 public class MessageHandler {
 	
 	private Semaphore mSemaphore=null;
